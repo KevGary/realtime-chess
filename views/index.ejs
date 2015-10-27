@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <link rel="stylesheet" href="/stylesheets/chessboard-0.3.0.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+  <title><%= title %></title>
+</head>
+<body>
+  <div id="board"></div>
+  <div class="container" id="chatbox">
+    <div id="msg-stream">
+    </div>
+    <form action="">
+      <input id="m" autocomplete="off" /><button id="send" class="btn-primary pull-right">Send</button>
+    </form>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.0.0-alpha1/jquery.js"></script>
+  <script src="/javascripts/chessboard-0.3.0.min.js"></script>
+  <script src="/javascripts/chessboard-0.3.0.js"></script>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+  //chessboard.js w/ socket.io
+    var socket = io();
+    var init = function() {
+
+    var onChange = function(oldPos, newPos) {
+      console.log("Move animation complete:");
+      console.log("Old position: " + ChessBoard.objToFen(oldPos));
+      console.log("New position: " + ChessBoard.objToFen(newPos));
+      console.log("--------------------");
+
+      socket.emit('move made', newPos);
+    };
+
+    socket.on('move made', function (newPosition){
+      board.position(newPosition)
+    });
+
+    $('form').submit(function(){
+      socket.emit('chat message', $('#m').val());
+      $('#m').val('');
+      return false;
+    });
+    socket.on('chat message', function(msg){
+      $('#msg-stream').append($('<li>').text(msg));
+    });
+
+
+    var board = ChessBoard('board', {
+      position: 'start',
+      draggable: true,
+      dropOffBoard: 'snapback',
+      onChange: onChange
+    });
+
+    };
+    $(document).ready(init);
+  </script>
+
+</body>
+</html>
