@@ -1,0 +1,97 @@
+body {
+  background-color: #D3D3D3;
+  background: url("https://maigalia.files.wordpress.com/2014/03/chess-king-checkmate.jpg?w=487") no-repeat center center fixed; 
+  background-position: center center;
+
+  -webkit-background-size: cover;
+  -moz-background-size: cover;
+  -o-background-size: cover;
+  background-size: cover;
+}
+
+.sign-in-up .left-inner-addon i {
+    position: absolute;
+    padding: 10px 12px;
+    pointer-events: none;
+}
+
+.sign-in-up .right-inner-addon {
+    position: relative;
+}
+
+.sign-in-up .right-inner-addon input {
+    padding-right: 30px;
+}
+
+.sign-in-up .right-inner-addon i {
+    position: absolute;
+    right: 0px;
+    padding: 17px 12px;
+    pointer-events: none;
+}
+
+.sign-in-up .form-title {
+    text-align: center;
+    margin-top: 1em;
+}
+
+.sign-in-up .paywith {
+    padding: 12px 12px 0 0;
+    margin: 0;
+    font-weight: bold;
+}
+
+.container {
+  background-color: rgba(20, 145, 45, 0.9);
+  margin-top: 5%;
+  padding-top: 25px; 
+  padding-bottom: 50px;
+  width: 50%;
+  height: 100%;
+  border-radius: 10px;
+  box-shadow: 10px 10px 5px black;
+}
+
+.form-title {
+  margin-bottom: 35px;
+  font-size: 36px;
+}
+
+.existing {
+  margin-top: 14px;
+  background:none!important;
+  border:none; 
+  padding:0!important;
+}
+
+p {
+  color: red;
+}
+
+.version {
+  font-size: 12px;
+  color: white;
+}
+
+.status {
+  color: #D3D3D3;
+  font-size: 22px;
+  text-shadow: 2px 2px black;
+  margin-bottom: -15px;
+}
+
+.existing {
+  color: #D3D3D3;
+  text-shadow: 2px 2px black;
+}
+
+#xpres {
+  position: relative;
+  width: 80%;
+}
+
+#tag {
+  position: relative;
+  width: 36%;
+  margin-top: 4%;
+}

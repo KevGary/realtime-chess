@@ -4,6 +4,7 @@ var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
+var cookieSession = require('cookie-session');
 
 var users = require('./routes/users');
 
@@ -19,6 +20,14 @@ app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
+app.use(cookieSession({
+  name: 'session',
+  keys : [
+    "tempKEY1",
+    "tempKEY2",
+    "tempKEY3"
+  ]
+}));
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/users', users);
@@ -26,15 +35,88 @@ app.use('/users', users);
 //---CODE---
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
- 
-app.get('/', function (req, res) {
-  res.render('index', {title: "Realtime Chess"})
+var bcrypt = require('bcrypt');
+
+//db
+var db = require('monk')('localhost/xpres-chess');
+var Users = db.get('users');
+var Games = db.get('games');
+
+//routes 
+app.get('/signup', function (req, res, next){
+  res.render('signup', {title: "Xpres Chess", errors: [], body: ""});
 });
 
+app.post('/signup', function (req, res, next) {
+  var errors = [];
+  if(req.body.username != "" && req.body.password != ""){
+    Users.findOne({username: req.body.username.trim().toLowerCase()})
+      .then(function (user) {
+        if(user){
+          errors.push("User already exists");
+          res.render('signup', {title: "Xpres Chess", errors: errors, body: req.body })
+        } else {
+          var hash = bcrypt.hashSync(req.body.password, 8);
+          Users.insert({username: req.body.username.trim().toLowerCase(), password: hash, wins: 0, loses: 0})
+            .then(function passingUserData (userData) {
+              if(Games.findOne({}))
+
+              return Games.insert({user_ids: [userData._id]})
+                .then(function passingGameData (gameData) {
+                  req.session.username = req.body.username.trim().toLowerCase();
+                  res.redirect('/' + String(gameData._id)); 
+                })
+            })
+        }
+      })
+  } else {
+    errors.push('Username/password cannot be blank');
+    res.render('signup', {title: 'Xpres Chess', errors: errors, body: req.body});
+  }
+});
+
+app.get('/login', function (req, res , next) {
+  res.render('login', {title: "Xpres Chess", errors: [], body: ""});
+})
+
+app.post('/login', function (req, res, next) {
+  var errors = [];
+  if(req.body.username != "" && req.body.password != ""){
+    Users.findOne({username: req.body.username.trim().toLowerCase()})
+      .then(function (user) {
+        if(bcrypt.compareSync(req.body.password, user.password) == true){
+          return Games.insert({user_ids: [user._id]})
+            .then(function passingGameData (gameData) {
+              req.session.username = req.body.username.trim().toLowerCase();
+              res.redirect('/' + String(gameData._id)); 
+            })
+        }else{
+          errors.push('Username/password incorrect');
+          res.render('login', {title: 'Xpress Chess', errors: errors, body: ""});
+        }
+        if(!user){
+          errors.push('Username/password not found');
+          res.render('login', {title: 'Xpres Chess', errors: errors, body: ""});
+        }
+      });
+  } else {
+    errors.push('Username/password cannot be blank');
+    res.render('login', {title: 'Xpres Chess', errors: errors, body: req.body});
+  }
+});
+
+app.get('/:id', function (req, res) {
+  res.render('index', {title: 'Xpres Chess'});
+});
+
+
+//socket
 io.on('connection', function (socket) {
   console.log('a user connected');
-  socket.on('move made', function (position) {
-    io.emit('move made', position);
+
+  socket.on('move made', function (newPosition) {
+    Games.insert({position: newPosition})
+    io.emit('move made', newPosition);
   });
 
   socket.on('chat message', function (msg) {

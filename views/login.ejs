@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= title %></title>
+    <link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css' />
+    <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.0.0-alpha/css/bootstrap.css' />
+    <link rel='stylesheet' href='/stylesheets/login.css' />
+  </head>
+  <body>
+
+    <div class="container sign-in-up">
+        <div class="row">
+          <div class="form-title"><img id="xpres" src='/img/xpres.png'><br><div class="version"><img id="tag" src="/img/tag.png"></div><br><div class="status"></div></div>
+          <div class="col-md-4 col-md-offset-4">
+          <% if(errors.length > 0){ %>
+            <% for (var i = 0; i < errors.length; i++){ %>
+              <p><%= errors[i] %></p>
+            <% } %>
+          <% } %>
+            <div class="text-center">
+              <form action="/login" method="post">
+                <div class="form-group">
+                  <div class="right-inner-addon">
+                    <i class="fa fa-envelope"></i>
+                    <input class="form-control input-lg" placeholder="Username" type="text" name="username" <% if(body.username){ %>
+                      value=<%= body.username %>
+                    <% } %>
+                    >
+                  </div>
+                </div>
+                <div class="form-group">
+                  <div class="right-inner-addon">
+                    <i class="fa fa-key"></i>
+                    <input class="form-control input-lg" placeholder="Password" type="text" name="password" <% if(body.password){ %>
+                      value=<%= body.password %>
+                    <% } %>
+                    >
+                  </div>
+                </div>
+                <input class="btn btn-large btn-primary" type="submit" value="Signin">
+              </form>
+              <div class="existing">
+                <form action="/signup" method="get">
+                  <input class="existing" type="submit" name="existing-user" value="New User? Sign up."></div>
+                </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css"></script>
+  </body>
+</html>

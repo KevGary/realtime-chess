@@ -8,38 +8,133 @@
   <title><%= title %></title>
 </head>
 <body>
-  <div id="board"></div>
-  <div class="container" id="chatbox">
-    <div id="msg-stream">
+  <div id="wrapper">
+    <div id="centered">
+        <div class="board" id="board"></div>
     </div>
-    <form action="">
-      <input id="m" autocomplete="off" /><button id="send" class="btn-primary pull-right">Send</button>
-    </form>
+    <div id="floating">
+      <div id="sidebar">
+        <div class="table-container-custom">
+        <table class="table table-striped table-bordered table-hover" id="notes-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>White</th>
+              <th>Black</th>
+            </tr>
+          </thead>
+          <tbody>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
+  <div class="container" id="chatbox">
+      <div id="msg-stream">
+      </div>
+      <form action="">
+        <input id="m" autocomplete="off" /><button id="send" class="btn-primary pull-right">Send</button>
+      </form>
+  </div>
+        
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.0.0-alpha1/jquery.js"></script>
   <script src="/javascripts/chessboard-0.3.0.min.js"></script>
   <script src="/javascripts/chessboard-0.3.0.js"></script>
+  <script src="/javascripts/chess.js"></script>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
-  //chessboard.js w/ socket.io
+  //chessboard.js and chess.js w/ socket.io
+
     var socket = io();
-    var init = function() {
+    var board,
+      game = new Chess(),
+      statusEl = $('#status'),
+      fenEl = $('#fen'),
+      pgnEl = $('#pgn');
 
-    var onChange = function(oldPos, newPos) {
-      console.log("Move animation complete:");
-      console.log("Old position: " + ChessBoard.objToFen(oldPos));
-      console.log("New position: " + ChessBoard.objToFen(newPos));
-      console.log("--------------------");
-
-      socket.emit('move made', newPos);
+    // do not pick up pieces if the game is over
+    // only pick up pieces for the side to move
+    var onDragStart = function(source, piece, position, orientation) {
+      if (game.game_over() === true ||
+          (game.turn() === 'w' && piece.search(/^b/) !== -1) ||
+          (game.turn() === 'b' && piece.search(/^w/) !== -1)) {
+        return false;
+      }
     };
 
-    socket.on('move made', function (newPosition){
-      board.position(newPosition)
+    var onDrop = function(source, target) {
+      // see if the move is legal
+      var move = game.move({
+        from: source,
+        to: target,
+        promotion: 'q' // NOTE: always promote to a queen for example simplicity
+      });
+
+      // illegal move
+      if (move === null) return 'snapback';
+
+      // updateStatus();
+    };
+
+    // update the board position after the piece snap 
+    // for castling, en passant, pawn promotion
+    var onSnapEnd = function() {
+      socket.emit('move made', game.pgn());
+    };
+
+    var updateStatus = function() {
+      var status = '';
+
+      var moveColor = 'White';
+      if (game.turn() === 'b') {
+        moveColor = 'Black';
+      }
+
+      // checkmate?
+      if (game.in_checkmate() === true) {
+        status = 'Game over, ' + moveColor + ' is in checkmate.';
+      }
+
+      // draw?
+      else if (game.in_draw() === true) {
+        status = 'Game over, drawn position';
+      }
+
+      // game still on
+      else {
+        status = moveColor + ' to move';
+
+        // check?
+        if (game.in_check() === true) {
+          status += ', ' + moveColor + ' is in check';
+        }
+      }
+
+      statusEl.html(status);
+      fenEl.html(game.fen());
+      pgnEl.html(game.pgn());
+    };
+
+    var cfg = {
+      draggable: true,
+      position: 'start',
+      onDragStart: onDragStart,
+      onDrop: onDrop,
+      onSnapEnd: onSnapEnd
+    };
+    board = ChessBoard('board', cfg);
+
+    //socket listens for move
+    socket.on('move made', function (newPosition) {
+      game.load_pgn(newPosition);
+      board.position(game.fen());
+
+      updateStatus();
     });
 
+    //chatroom
     $('form').submit(function(){
       socket.emit('chat message', $('#m').val());
       $('#m').val('');
@@ -48,17 +143,6 @@
     socket.on('chat message', function(msg){
       $('#msg-stream').append($('<li>').text(msg));
     });
-
-
-    var board = ChessBoard('board', {
-      position: 'start',
-      draggable: true,
-      dropOffBoard: 'snapback',
-      onChange: onChange
-    });
-
-    };
-    $(document).ready(init);
   </script>
 
 </body>
