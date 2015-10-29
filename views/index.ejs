@@ -37,6 +37,7 @@
         <input id="m" autocomplete="off" /><button id="send" class="btn-primary pull-right">Send</button>
       </form>
   </div>
+  <div class="gameData" id="<%= game[game.length-1]._id %>"></div>
         
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.0.0-alpha1/jquery.js"></script>
   <script src="/javascripts/chessboard-0.3.0.min.js"></script>
@@ -46,8 +47,10 @@
   <script src="/socket.io/socket.io.js"></script>
   <script>
   //chessboard.js and chess.js w/ socket.io
-
     var socket = io();
+    // var gameId = $('.gameData').attr('id');
+    // var gameSocket = io.connect('http://localhost/' + gameId)
+
     var board,
       game = new Chess(),
       statusEl = $('#status'),

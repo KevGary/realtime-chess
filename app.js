@@ -59,23 +59,23 @@ app.post('/signup', function (req, res, next) {
           var hash = bcrypt.hashSync(req.body.password, 8);
           Users.insert({username: req.body.username.trim().toLowerCase(), password: hash, wins: 0, loses: 0})
             .then(function passingUser (user) {
+              // req.session.username = user._id;
               // Games.find({user_ids: {$in: [user._id]}})
               Games.find({})
                 .then(function findingAllGames (games) {
                   if(games.length == 0 || games[games.length-1].user_ids.length == 2){
-                    console.log('here1')
                     Games.insert({user_ids: [user._id]})
                       .then(function renderNewGamePage (newGame) {
                         res.redirect('/' + newGame._id);
                       })
                   } else {
-                    console.log('here2')
                     Games.update(
                       {_id: games[games.length-1]._id},
                       { $addToSet: { user_ids: user._id}}
                     )
                     res.redirect('/' + games[games.length-1]._id);
                   }
+                  req.session.username = games[games.length-1]._id;
                 })
             })
         }
@@ -117,23 +117,39 @@ app.post('/login', function (req, res, next) {
 });
 
 app.get('/:id', function (req, res) {
-  res.render('index', {title: 'Xpres Chess'});
+  console.log(req.session.username)
+  Games.find({_id: req.params.id})
+    .then(function passingCurrGame (currGame) {
+      res.render('index', {title: 'Xpres Chess', game: currGame});
+    })
+  io.on('connection', function (socket) {
+    Games.find({})
+      .then(function joinRoom (gameData) {
+        socket.join(String(gameData[gameData.length - 1]));
+
+        console.log(socket.room);
+        console.log(String(req.session.username))
+
+        socket.on('move made', function (newPosition) {
+          // Games.insert({position: newPosition})
+          io.to(String(req.session.username)).emit('move made', newPosition);
+        });
+
+        socket.on('chat message', function (msg) {
+          io.to(req.session.username).emit('chat message', msg);
+        });
+      })
+
+    console.log('a user connected');
+
+    socket.on('disconnect', function () {
+      console.log('user disconnected');
+    });
+  });
 });
 
 
 //socket
-io.on('connection', function (socket) {
-  console.log('a user connected');
-
-  socket.on('move made', function (newPosition) {
-    Games.insert({position: newPosition})
-    io.emit('move made', newPosition);
-  });
-
-  socket.on('chat message', function (msg) {
-    io.emit('chat message', msg);
-  })
-});
 
 http.listen(4000, function () {
   console.log('listening on *:4000');
