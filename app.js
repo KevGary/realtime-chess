@@ -75,7 +75,7 @@ app.post('/signup', function (req, res, next) {
                     )
                     res.redirect('/' + games[games.length-1]._id);
                   }
-                  req.session.username = games[games.length-1]._id;
+                  req.session.username = user._id;
                 })
             })
         }
@@ -98,7 +98,7 @@ app.post('/login', function (req, res, next) {
         if(bcrypt.compareSync(req.body.password, user.password) == true){
           return Games.insert({user_ids: [user._id]})
             .then(function passingGameData (gameData) {
-              req.session.username = req.body.username.trim().toLowerCase();
+              req.session.username = user._id;
               res.redirect('/' + String(gameData._id)); 
             })
         }else{
@@ -117,39 +117,41 @@ app.post('/login', function (req, res, next) {
 });
 
 app.get('/:id', function (req, res) {
-  console.log(req.session.username)
   Games.find({_id: req.params.id})
     .then(function passingCurrGame (currGame) {
       res.render('index', {title: 'Xpres Chess', game: currGame});
-    })
-  io.on('connection', function (socket) {
-    Games.find({})
-      .then(function joinRoom (gameData) {
-        socket.join(String(gameData[gameData.length - 1]));
-
-        console.log(socket.room);
-        console.log(String(req.session.username))
-
-        socket.on('move made', function (newPosition) {
-          // Games.insert({position: newPosition})
-          io.to(String(req.session.username)).emit('move made', newPosition);
-        });
-
-        socket.on('chat message', function (msg) {
-          io.to(req.session.username).emit('chat message', msg);
-        });
-      })
-
-    console.log('a user connected');
-
-    socket.on('disconnect', function () {
-      console.log('user disconnected');
     });
+});
+
+io.on('connection', function (socket) {
+
+  var currSession = socket.request.headers.referer.split('/')[3];
+
+  socket.join(currSession);
+  socket.on('move made', function (newPosition) {
+    // Games.insert({position: newPosition})
+    io.to(currSession).emit('move made', newPosition);
+  });
+
+  socket.on('chat message', function (msg) {
+    io.to(currSession).emit('chat message', msg);
   });
 });
 
-
 //socket
+// io.on('connection', function (socket) {
+
+//   socket.join('room');
+
+//   socket.on('move made', function (newPosition) {
+//     // Games.insert({position: newPosition})
+//     io.to('room').emit('move made', newPosition);
+//   });
+
+//   socket.on('chat message', function (msg) {
+//     io.to('room').emit('chat message', msg);
+//   });
+// });
 
 http.listen(4000, function () {
   console.log('listening on *:4000');
