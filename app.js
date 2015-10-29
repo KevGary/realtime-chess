@@ -58,13 +58,24 @@ app.post('/signup', function (req, res, next) {
         } else {
           var hash = bcrypt.hashSync(req.body.password, 8);
           Users.insert({username: req.body.username.trim().toLowerCase(), password: hash, wins: 0, loses: 0})
-            .then(function passingUserData (userData) {
-              if(Games.findOne({}))
-
-              return Games.insert({user_ids: [userData._id]})
-                .then(function passingGameData (gameData) {
-                  req.session.username = req.body.username.trim().toLowerCase();
-                  res.redirect('/' + String(gameData._id)); 
+            .then(function passingUser (user) {
+              // Games.find({user_ids: {$in: [user._id]}})
+              Games.find({})
+                .then(function findingAllGames (games) {
+                  if(games.length == 0 || games[games.length-1].user_ids.length == 2){
+                    console.log('here1')
+                    Games.insert({user_ids: [user._id]})
+                      .then(function renderNewGamePage (newGame) {
+                        res.redirect('/' + newGame._id);
+                      })
+                  } else {
+                    console.log('here2')
+                    Games.update(
+                      {_id: games[games.length-1]._id},
+                      { $addToSet: { user_ids: user._id}}
+                    )
+                    res.redirect('/' + games[games.length-1]._id);
+                  }
                 })
             })
         }
